@@ -21,7 +21,7 @@
       position: absolute;
       top: 0.25in;
       left: 0.25in;
-      height: 2in;
+      height: 1.4in;
       width: auto;
     }
     .to-address {
@@ -66,8 +66,8 @@
       const addressWords = address.trim().split(" ");
       const line2 = addressWords.slice(0, 2).join(" ");
       const line3 = addressWords.slice(2).join(" ");
-    const formattedAddress = [payee, line2, line3].join("\n");
-      document.getElementById("toAddress").innerText = formattedAddress;
+      const formattedAddress = [payee, line2, line3].join("\\n").replace(/\\\\n/g, "\\n");
+      document.getElementById("toAddress").textContent = formattedAddress;
       window.print();
     };
   </script>
