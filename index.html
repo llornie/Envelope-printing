@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Print Envelope</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
+      font-family: sans-serif;
+    }
+    .envelope {
+      width: 9.5in;
+      height: 4.125in;
+      padding: 0;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .logo {
+      position: absolute;
+      top: 0.25in;
+      left: 0.25in;
+      height: 1.2in;
+    }
+    .to-address {
+      position: absolute;
+      top: 1.8in;
+      left: 4.75in;
+      width: 4in;
+      font-size: 12pt;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .envelope, .envelope * {
+        visibility: visible;
+      }
+      .envelope {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="envelope">
+    <img class="logo" src="logo_imf.png" alt="Return Address Logo" />
+    <div class="to-address" id="toAddress"></div>
+  </div>
+  <script>
+    function getQueryParam(key) {
+      const params = new URLSearchParams(window.location.search);
+      return decodeURIComponent(params.get(key) || "");
+    }
+
+    window.onload = () => {
+      const payee = getQueryParam("payee");
+      const address = getQueryParam("address");
+      const fullAddress = payee + "\n" + address;
+      document.getElementById("toAddress").innerText = fullAddress;
+      window.print();
+    };
+  </script>
+</body>
+</html>
