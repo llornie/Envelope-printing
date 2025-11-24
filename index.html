@@ -6,79 +6,68 @@
   <style>
     @page { size: 9.5in 4.125in; margin: 0; }
     html, body {
-      width: 9.5in;
-      height: 4.125in;
-      margin: 0;
-      padding: 0;
-      background: #fff;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      font-family: system-ui, -apple-system, "Segoe UI",
-                   Roboto, Helvetica, Arial, sans-serif;
+      width: 9.5in; height: 4.125in; margin: 0; padding: 0; background: #fff;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+    .envelope { position: relative; width: 9.5in; height: 4.125in; overflow: hidden; }
 
-    .envelope {
-      position: relative;
-      width: 9.5in;
-      height: 4.125in;
-      overflow: hidden;
+    #return-address {
+      position: absolute; top: 0.4in; left: 0.55in;
+      font-size: 10.5pt; line-height: 1.35; color: #000; z-index: 10;
     }
-
     #logo {
-      position: absolute;
-      top: 0.10in;
-      left: 0.35in;
-      height: 2.4in;
-      width: auto;
+      position: absolute; top: 0.25in; left: 0.35in;
+      height: 1.0in; width: auto; z-index: 5;
     }
-
     #addr {
-      position: absolute;
-      top: 1.80in;
-      left: 3.00in;
-      width: 4.25in;
-      font-size: 14pt;
-      line-height: 1.4;
-      white-space: pre-wrap;
+      position: absolute; top: 1.6in; left: 3.8in; width: 4.8in;
+      font-size: 15pt; font-weight: bold; line-height: 1.4; white-space: pre-wrap;
     }
-
+    .debug #return-address { outline: 1px dashed #f96; }
     .debug #logo { outline: 1px dashed #c33; }
     .debug #addr { outline: 1px dashed #36c; }
   </style>
 </head>
-
 <body>
   <div id="root" class="envelope">
-    <img id="logo" src="logo_imf.png?v=3" alt="Return Address Logo" />
+    <div id="return-address">
+      IMF Church<br>
+      Box 973<br>
+      Arborg MB R0C 0A0
+    </div>
+    <img id="logo" src="logo_imf.png?v=4" alt="IMF Church Logo" />
     <div id="addr"></div>
   </div>
 
   <script>
-    const qs = new URLSearchParams(window.location.search);
-    const get = (k, d="") => qs.get(k) ?? d;
-    const getNum = (k, d) => {
-      const v = qs.get(k);
-      if (v == null) return d;
-      const n = Number(v);
-      return Number.isFinite(n) ? n : d;
-    };
-    const inches = n => `${n}in`;
+    const qs = new URLSearchParams(location.search);
+    const get = (k, f) => qs.get(k) ?? f;
+    const getNum = (k, f) => { const v = qs.get(k); return v === null ? f : Number(v) || f; };
+    const i = n => `${n}in`;
 
-    const logoH   = getNum("logoH", 2.4);
-    const logoTop = getNum("logoTop", 0.10);
-    const logoLeft= getNum("logoLeft",0.35);
+    const logoH = getNum("logoH", 1.0), logoTop = getNum("logoTop", 0.25), logoLeft = getNum("logoLeft", 0.35);
+    const retTop = getNum("returnTop", 0.4), retLeft = getNum("returnLeft", 0.55);
+    const addrTop = getNum("addrTop", 1.6), addrLeft = getNum("addrLeft", 3.8), fontPt = getNum("fontPt", 15);
+    const debug = get("debug") === "1", autoprint = get("autoprint", "1") === "1";
 
-    const addrTop = getNum("addrTop", 1.80);
-    const addrLeft= getNum("addrLeft",3.00);
+    if (debug) document.getElementById("root").classList.add("debug");
 
-    const fontPt  = getNum("fontPt", 14);
-    const lineHt  = getNum("lineHt",1.4);
+    document.getElementById("logo").style.height = i(logoH);
+    document.getElementById("logo").style.top = i(logoTop);
+    document.getElementById("logo").style.left = i(logoLeft);
+    document.getElementById("return-address").style.top = i(retTop);
+    document.getElementById("return-address").style.left = i(retLeft);
+    const addr = document.getElementById("addr");
+    addr.style.top = i(addrTop); addr.style.left = i(addrLeft); addr.style.fontSize = fontPt + "pt";
 
-    const debug   = get("debug","") === "1";
-    const autoprint = get("autoprint","1") === "1";
+    let payee = get("payee","").trim();
+    let l2 = get("line2","").trim(), l3 = get("line3","").trim();
+    const combo = get("address","").trim();
+    if (!l2 && !l3 && combo) { const w = combo.split(/\s+/); l2 = w.slice(0,2).join(" "); l3 = w.slice(2).join(" "); }
+    addr.textContent = [payee, l2, l3].filter(Boolean).join("\n");
 
-    const root = document.getElementById("root");
-    if (debug) root.classList.add("debug");
-
-    const logo = document.getElementById("logo");
-    logo.style.height =
+    window.addEventListener("load", () => { if (autoprint) window.print(); });
+  </script>
+</body>
+</html>
