@@ -1,75 +1,146 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Print Envelope</title>
   <style>
-    body {
+    @page {
+      size: 9.5in 4.125in;
+      margin: 0;
+    }
+    html, body {
+      width: 9.5in;
+      height: 4.125in;
       margin: 0;
       padding: 0;
       background: #fff;
-      font-family: sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     .envelope {
+      position: relative;
       width: 9.5in;
       height: 4.125in;
-      padding: 0;
-      position: relative;
-      box-sizing: border-box;
+      overflow: hidden;
     }
-    .logo {
+
+    /* Return address (top-left corner) */
+    #return-address {
+      position: absolute;
+      top: 0.4in;
+      left: 0.55in;
+      font-size: 10.5pt;
+      line-height: 1.35;
+      color: #000;
+      z-index: 10;
+    }
+
+    /* Logo – sits nicely beside or slightly under the return address */
+    #logo {
       position: absolute;
       top: 0.25in;
-      left: 0.25in;
-      height: 3in;
+      left: 0.35in;
+      height: 1.0in;
       width: auto;
+      z-index: 5;
     }
-    .to-address {
+
+    /* Recipient address (right/center of envelope) */
+    #addr {
       position: absolute;
-      top: 1.8in;
-      left: 3.0in;
-      width: 4in;
-      font-size: 14pt;
+      top: 1.6in;
+      left: 3.8in;
+      width: 4.8in;
+      font-size: 15pt;
+      font-weight: bold;
       line-height: 1.4;
       white-space: pre-wrap;
     }
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .envelope, .envelope * {
-        visibility: visible;
-      }
-      .envelope {
-        position: absolute;
-        top: 0;
-        left: 0;
-        margin: 0;
-      }
-    }
+
+    /* Debug outlines – add &debug=1 to see boxes */
+    .debug #return-address { outline: 1px dashed #f96; }
+    .debug #logo         { outline: 1px dashed #c33; }
+    .debug #addr         { outline: 1px dashed #36c; }
   </style>
 </head>
 <body>
-  <div class="envelope">
-    <img class="logo" src="logo_imf.png" alt="Return Address Logo" />
-    <div class="to-address" id="toAddress"></div>
-  </div>
-  <script>
-    function getQueryParam(key) {
-      const params = new URLSearchParams(window.location.search);
-      return decodeURIComponent(params.get(key) || "");
-    }
+  <div id="root" class="envelope">
 
-    window.onload = () => {
-      const payee = getQueryParam("payee");
-      const address = getQueryParam("address");
-      const addressWords = address.trim().split(" ");
-      const line2 = addressWords.slice(0, 2).join(" ");
-      const line3 = addressWords.slice(2).join(" ");
-      const formattedAddress = [payee, line2, line3].join("\\n").replace(/\\\\n/g, "\\n");
-      document.getElementById("toAddress").textContent = formattedAddress;
-      window.print();
+    <!-- RETURN ADDRESS – TOP LEFT -->
+    <div id="return-address">
+      IMF Church<br>
+      Box 973<br>
+      Arborg MB R0C 0A0
+    </div>
+
+    <!-- LOGO – TOP LEFT (next to return address) -->
+    <img id="logo" src="logo_imf.png?v=3" alt="IMF Church Logo" />
+
+    <!-- RECIPIENT ADDRESS – CENTER/RIGHT -->
+    <div id="addr"></div>
+  </div>
+
+  <script>
+    const qs = new URLSearchParams(window.location.search);
+    const get = (key, fallback = "") => qs.get(key) ?? fallback;
+    const getNum = (key, fallback) => {
+      const v = qs.get(key);
+      if (v === null) return fallback;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : fallback;
     };
+    const inches = n => `${n}in`;
+
+    // Adjustable via URL parameters (all optional)
+    const logoH      = getNum("logoH", 1.0);
+    const logoTop    = getNum("logoTop", 0.25);
+    const logoLeft   = getNum("logoLeft", 0.35);
+
+    const returnTop  = getNum("returnTop", 0.4);
+    const returnLeft = getNum("returnLeft", 0.55);
+
+    const addrTop    = getNum("addrTop", 1.6);
+    const addrLeft   = getNum("addrLeft", 3.8);
+    const fontPt     = getNum("fontPt", 15);
+
+    const debug      = get("debug") === "1";
+    const autoprint  = get("autoprint", "1") === "1";
+
+    const root = document.getElementById("root");
+    if (debug) root.classList.add("debug");
+
+    // Apply positioning
+    document.getElementById("logo").style.height = inches(logoH);
+    document.getElementById("logo").style.top    = inches(logoTop);
+    document.getElementById("logo").style.left   = inches(logoLeft);
+
+    document.getElementById("return-address").style.top  = inches(returnTop);
+    document.getElementById("return-address").style.left = inches(returnLeft);
+
+    const addr = document.getElementById("addr");
+    addr.style.top     = inches(addrTop);
+    addr.style.left    = inches(addrLeft);
+    addr.style.fontSize = fontPt + "pt";
+
+    // Build recipient address from URL parameters
+    const payee = get("payee", "").trim();
+    let line2 = get("line2", "").trim();
+    let line3 = get("line3", "").trim();
+    const combo = get("address", "").trim();
+
+    if (!line2 && !line3 && combo) {
+      const words = combo.split(/\s+/);
+      line2 = words.slice(0, 2).join(" ");
+      line3 = words.slice(2).join(" ");
+    }
+    const lines = [payee, line2, line3].filter(Boolean);
+    addr.textContent = lines.join("\n");
+
+    // Auto-print (disable with &autoprint=0)
+    window.addEventListener("load", () => {
+      if (autoprint) window.print();
+    });
   </script>
 </body>
 </html>
