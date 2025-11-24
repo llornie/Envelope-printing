@@ -1,73 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Print Envelope</title>
+  <meta charset="UTF-8">
+  <title>IMF Church #10 Envelope</title>
   <style>
     @page { size: 9.5in 4.125in; margin: 0; }
     html, body {
       width: 9.5in; height: 4.125in; margin: 0; padding: 0; background: #fff;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: Arial, sans-serif;
     }
     .envelope { position: relative; width: 9.5in; height: 4.125in; overflow: hidden; }
 
+    /* RETURN ADDRESS – true top-left corner */
     #return-address {
-      position: absolute; top: 0.4in; left: 0.55in;
-      font-size: 10.5pt; line-height: 1.35; color: #000; z-index: 10;
+      position: absolute;
+      top: 0.35in;
+      left: 0.6in;
+      font-size: 11pt;
+      line-height: 1.3;
     }
     #logo {
-      position: absolute; top: 0.25in; left: 0.35in;
-      height: 1.0in; width: auto; z-index: 5;
+      position: absolute;
+      top: 0.25in;
+      left: 0.35in;
+      height: 0.9in;
+      width: auto;
     }
+
+    /* RECIPIENT ADDRESS – center/right */
     #addr {
-      position: absolute; top: 1.6in; left: 3.8in; width: 4.8in;
-      font-size: 15pt; font-weight: bold; line-height: 1.4; white-space: pre-wrap;
+      position: absolute;
+      top: 1.6in;
+      left: 3.7in;
+      width: 5in;
+      font-size: 16pt;
+      font-weight: bold;
+      line-height: 1.45;
+      white-space: pre-line;   /* respects real line breaks, hides \n */
     }
-    .debug #return-address { outline: 1px dashed #f96; }
-    .debug #logo { outline: 1px dashed #c33; }
-    .debug #addr { outline: 1px dashed #36c; }
+
+    /* Debug mode: ?debug=1 */
+    .debug #return-address, .debug #logo, .debug #addr { outline: 1px dashed red; }
   </style>
 </head>
 <body>
-  <div id="root" class="envelope">
+  <div class="envelope">
+    <!-- RETURN ADDRESS (top-left corner) -->
     <div id="return-address">
       IMF Church<br>
       Box 973<br>
       Arborg MB R0C 0A0
     </div>
-    <img id="logo" src="logo_imf.png?v=4" alt="IMF Church Logo" />
+
+    <!-- LOGO (top-left corner) -->
+    <img id="logo" src="logo_imf.png?v=5" alt="IMF Church">
+
+    <!-- RECIPIENT ADDRESS (center/right) -->
     <div id="addr"></div>
   </div>
 
   <script>
     const qs = new URLSearchParams(location.search);
-    const get = (k, f) => qs.get(k) ?? f;
-    const getNum = (k, f) => { const v = qs.get(k); return v === null ? f : Number(v) || f; };
-    const i = n => `${n}in`;
+    const get = (k, f = "") => qs.get(k) ?? f;
+    const getNum = (k, f) => parseFloat(qs.get(k)) || f;
 
-    const logoH = getNum("logoH", 1.0), logoTop = getNum("logoTop", 0.25), logoLeft = getNum("logoLeft", 0.35);
-    const retTop = getNum("returnTop", 0.4), retLeft = getNum("returnLeft", 0.55);
-    const addrTop = getNum("addrTop", 1.6), addrLeft = getNum("addrLeft", 3.8), fontPt = getNum("fontPt", 15);
-    const debug = get("debug") === "1", autoprint = get("autoprint", "1") === "1";
+    // Optional fine-tuning via URL
+    const debug = get("debug") === "1";
+    if (debug) document.body.classList.add("debug");
 
-    if (debug) document.getElementById("root").classList.add("debug");
+    // Recipient address lines
+    let payee = get("payee", "").trim();
+    let line2 = get("line2", "").trim();
+    let line3 = get("line3", "").trim();
+    const combo = get("address", "").trim();
 
-    document.getElementById("logo").style.height = i(logoH);
-    document.getElementById("logo").style.top = i(logoTop);
-    document.getElementById("logo").style.left = i(logoLeft);
-    document.getElementById("return-address").style.top = i(retTop);
-    document.getElementById("return-address").style.left = i(retLeft);
-    const addr = document.getElementById("addr");
-    addr.style.top = i(addrTop); addr.style.left = i(addrLeft); addr.style.fontSize = fontPt + "pt";
+    if (!line2 && !line3 && combo) {
+      const words = combo.trim().split(/\s+/);
+      line2 = words.slice(0, 2).join(" ");      // e.g. "Box 973" or "123 Main"
+      line3 = words.slice(2).join(" ");        // city + province + postal
+    }
 
-    let payee = get("payee","").trim();
-    let l2 = get("line2","").trim(), l3 = get("line3","").trim();
-    const combo = get("address","").trim();
-    if (!l2 && !l3 && combo) { const w = combo.split(/\s+/); l2 = w.slice(0,2).join(" "); l3 = w.slice(2).join(" "); }
-    addr.textContent = [payee, l2, l3].filter(Boolean).join("\n");
+    // Build clean address (payee on its own line, then street + city)
+    const lines = [];
+    if (payee) lines.push(payee);
+    if (line2 || line3) lines.push([line2, line3].filter(Boolean).join(" "));
+    document.getElementById("addr").textContent = lines.join("\n");
 
-    window.addEventListener("load", () => { if (autoprint) window.print(); });
+    // Auto-print
+    if (get("autoprint", "1") !== "0") window.print();
   </script>
 </body>
 </html>
